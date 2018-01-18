@@ -1,3 +1,6 @@
 from django.db import models
 
-# Create your models here.
+class Restaurant(models.Model):
+    name = models.CharField(max_length=256)
+    opens_at = models.TimeField()
+    closes_at = models.TimeField()
