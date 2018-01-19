@@ -91,3 +91,89 @@ class RestaurantListTest(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Restaurant.objects.count(), 2)
+
+
+class RestaurantDetailTest(APITestCase):
+    def setUp(self):
+        self.restaurant_1 = Restaurant.objects.create(name='Mirazur', opens_at='12:15:00', closes_at='14:15:00')
+
+    def test_get_restaurant_details(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Restaurant.objects.count(), 1)
+        self.assertEqual(response.data,
+            {
+                'id': self.restaurant_1.id,
+                'name': 'Mirazur',
+                'opens_at': '12:15:00',
+                'closes_at': '14:15:00'
+            }
+        )
+
+    def test_get_unexisting_restaurant_details(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id + 1})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Restaurant.objects.count(), 1)
+
+    def test_update_restaurant_details(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id})
+        data = {
+            'name': 'New Mirazur that closes later',
+            'opens_at': '12:15:00',
+            'closes_at': '14:16:00'
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Restaurant.objects.count(), 1)
+        self.assertEqual(response.data,
+            {
+                'id': self.restaurant_1.id,
+                'name': 'New Mirazur that closes later',
+                'opens_at': '12:15:00',
+                'closes_at': '14:16:00'
+            }
+        )
+
+    def test_update_restaurant_details_invalid_input(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id})
+        data = {
+            'name': 'New Mirazur that closes before it opens',
+            'opens_at': '14:15:00',
+            'closes_at': '12:15:00'
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Restaurant.objects.count(), 1)
+        self.assertNotEqual(RestaurantSerializer(self.restaurant_1),
+            {
+                'id': self.restaurant_1.id,
+                'name': 'New Mirazur that closes later',
+                'opens_at': '12:15:00',
+                'closes_at': '14:16:00'
+            }
+        )
+
+    def test_update_unexisting_restaurant_details(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id + 1})
+        data = {
+            'name': 'New Mirazur that closes later',
+            'opens_at': '12:15:00',
+            'closes_at': '14:16:00'
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Restaurant.objects.count(), 1)
+
+    def test_delete_restaurant(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Restaurant.objects.count(), 0)
+
+    def test_delete_unexisting_restaurant(self):
+        url = reverse('restaurant-details', kwargs={'pk': self.restaurant_1.id + 1})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Restaurant.objects.count(), 1)

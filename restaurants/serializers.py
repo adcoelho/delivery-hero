@@ -9,7 +9,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
         model = Restaurant
         fields = ('id', 'name', 'opens_at', 'closes_at')
 
-
     def validate(self, data):
         """
         Check that the opening time is before the closing time.
